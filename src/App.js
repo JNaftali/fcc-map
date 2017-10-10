@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import FccMap from './FccMap';
 import { latlng } from './utils';
-import { getSheetValues } from './sheetsApi';
+import { getExtensions, subscribeToFeatures, getFestMap } from './googleApi';
+// import backgroundJSON from './PFF-Map.geojson';
+// import './seed-datastore';
 
 class App extends Component {
   state = {
@@ -13,18 +15,20 @@ class App extends Component {
     mouseLatLng: { lng: 0, lat: 0 },
     popupCoords: [],
     popupContents: '',
+    backgroundJSON: {},
   };
 
   componentDidMount() {
     this.refreshPhoneExtensions();
-    this.refreshMapFeatures();
+    this.refreshBackgroundJSON();
+    subscribeToFeatures(snapshot => this.setState({ markers: snapshot }));
   }
 
-  refreshPhoneExtensions = async () =>
-    this.setState({ phones: await getSheetValues('Extensions') });
+  refreshBackgroundJSON = async () =>
+    this.setState({ backgroundJSON: await getFestMap() });
 
-  refreshMapFeatures = async () =>
-    this.setState({ markers: await getSheetValues('Map Features') });
+  refreshPhoneExtensions = async () =>
+    this.setState({ phones: await getExtensions() });
 
   setMousePos = (map, e) => {
     this.setState({
@@ -48,6 +52,7 @@ class App extends Component {
       mousePoint,
       mouseLatLng,
       markers,
+      backgroundJSON,
     } = this.state;
     const phones = markers.filter(x => x.type === 'phone');
 
@@ -61,6 +66,7 @@ class App extends Component {
           handleMapClick={this.echoCurrentLatLng}
           showFestMap={showFestMap}
           phones={phones}
+          backgroundJSON={backgroundJSON}
         />
         <div style={{ display: 'flex' }}>
           <button onClick={this.toggleFestMap} style={buttonStyle}>
